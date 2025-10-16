@@ -2,6 +2,7 @@ const CACHE_NAME = 'K-LAP receiver';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/ssw.html',
   '/manifest.json',
   '/service-worker.js',
   '/circuit_data.js',
@@ -51,4 +52,5 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+
 });
