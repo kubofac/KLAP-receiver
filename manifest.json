@@ -2,7 +2,7 @@
   "name": "K-LAP ｸﾎﾞﾌｧｸ receiver",
   "short_name": "K-LAP ｸﾎﾞﾌｧｸ receiver",
   "description": "K-LAP receiver",
-  "start_url": "/index.html",
+  "start_url": "/ssw.html",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#ffffff",
