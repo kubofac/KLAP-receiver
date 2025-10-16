@@ -1,0 +1,22 @@
+{
+  "name": "K-LAP ｸﾎﾞﾌｧｸ receiver",
+  "short_name": "K-LAP ｸﾎﾞﾌｧｸ receiver",
+  "description": "K-LAP receiver",
+  "start_url": "/index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#ffffff",
+  "theme_color": "#2196F3",
+  "icons": [
+    {
+      "src": "/icon-192r.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512r.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <title>KLAP_receiver</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; 
+            min-height: 100vh;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 10px;
+            position: relative;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #000000;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            padding-top: 20px; 
+            padding-bottom: 5px; 
+            padding-left: 20px;
+            padding-right: 20px;
+            max-width: 100%;
+            margin: 0 auto; 
+            width: 100%;
+            box-sizing: border-box;
+            height: calc(100vh - 20px); 
+            position: relative;
+        }
+        
+        /* 2カラム構造 */
+        #main-content {
+            display: flex;
+            flex-direction: row; 
+            width: 100%;
+            gap: 15px;
+            align-items: flex-start; 
+            flex-grow: 1; 
+            min-height: 0; 
+            margin-bottom: 50px; 
+            
+            position: relative;
+            z-index: 10; 
+        }
+        
+        /* 左カラム（リアルラップ、経過時間、メッセージ） - 幅65% */
+        #left-column {
+            display: flex;
+            flex-direction: column;
+            flex-basis: 65%; 
+            max-width: 65%;
+            flex-shrink: 0; 
+            align-items: center;
+            gap: 0px; 
+        }
+
+        /* 右カラム（ラップ履歴） - 幅35% */
+        #right-column {
+            display: flex;
+            flex-direction: column;
+            flex-basis: 35%; 
+            max-width: 35%;
+            flex-grow: 1; 
+            align-items: center;
+            height: 100%; 
+        }
+
+        #time-display-column {
+            width: 100%; 
+        }
+        
+        /* 計測ラップ (display1) */
+        #display1 {
+            font-size: 100px; 
+            font-weight: bold;
+            color: #eeeeee;
+            margin-bottom: 0px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: clip; 
+        }
+
+        /* 経過時間 (display) */
+        #display {
+            font-size: 70px; 
+            font-weight: bold;
+            color: #cccccc;
+            margin-bottom: 0px; 
+            white-space: nowrap;
+            overflow: hidden; 
+            text-overflow: clip;
+        }
+
+        /* ピットメッセージ */
+        #pitMessageDisplay {
+            width: 100%;
+            margin: 0; 
+            font-size: 1.8em; 
+            padding: 10px; 
+            font-weight: bold; 
+            color: #ffeb3b; 
+            background: #000000; 
+            border: none; 
+            border-radius: 5px; 
+            min-height: 25px;
+            text-align: left; 
+            display: none; 
+        }
+
+        /* ラップリストの調整 */
+        #lap_list {
+            width: 100%;
+            height: 100%; 
+            max-height: none; 
+            overflow-y: auto;
+            border: none;
+            border-radius: 5px;
+            background-color: #000000;
+            padding: 10px;
+        }
+
+        /* ラップ履歴の文字を2.0emに拡大 */
+        #lap_list div {
+            font-size: 2.0em; 
+            margin-bottom: 3px;
+            color: #dddddd;
+            text-align: right; 
+            white-space: nowrap; 
+        }
+
+        #buttons-row {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            gap: 15px;
+            padding-top: 10px;
+            margin-bottom: 0; 
+            flex-shrink: 0; 
+        }
+        
+        .button {
+            border: 1px solid #3a3a3c;
+            background-color: #2c2c2e;
+            padding: 10px 15px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-align: center;
+            flex-grow: 1; 
+            flex-basis: 0;
+            background-color: #2c2c2e; 
+        }
+        
+        .button:hover { background-color: #4a4a4e; }
+        #start:active { background-color: #4a804a; }
+        #lap:active { background-color: #4a4a4e; }
+        
+        .no-setting { background-color: #ff4d4d !important; }
+        .active-blue { background-color: #007aff !important; }
+        .no-gps { background-color: #ff4d4d !important; }
+
+        .ble-disconnected { background-color: #ff4d4d !important; border-color: #993333;}
+        .ble-connected { background-color: #007aff !important; border-color: #0066cc;}
+
+        /* debug-overlay */
+        #debug-overlay {
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7); 
+            color: #999999;
+            padding: 5px 10px;
+            border-radius: 10px 10px 0 0; 
+            font-size: 14px;
+            line-height: 1.5;
+            box-sizing: border-box;
+            z-index: 5; 
+        }
+        .status-text { text-align: left; margin: 0; }
+        
+        /* モバイルビューでのフォントサイズ再調整 */
+        @media (max-width: 768px) {
+            #main-content {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                flex-grow: 0; 
+                margin-bottom: 25px; 
+            }
+            #left-column, #right-column {
+                flex-basis: 100%;
+                max-width: 100%;
+                width: 100%;
+                height: auto; 
+                flex-shrink: 1; 
+            }
+            #left-column {
+                gap: 0px; 
+            }
+            #display1 { font-size: 80px; } 
+            #display { font-size: 45px; }
+            #lap_list {
+                height: 30vh; 
+                min-height: 180px;
+                font-size: 1em;
+            }
+            /* モバイル時のラップ履歴の文字を3.0emに拡大 */
+            #lap_list div {
+                font-size: 3.0em;
+                text-align: right;
+            }
+            #pitMessageDisplay {
+                font-size: 1.6em; 
+                padding: 8px; 
+            }
+            .button {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div id="container">
+    
+    <div id="debug-overlay">
+        <p id="status-display" class="status-text">GPS設定: 未取得</p>
+        <p id="debugInfo" class="status-text"></p>
+    </div>
+    
+    <div id="main-content">
+        
+        <div id="left-column">
+             <div id="time-display-column">
+                <div id='display1'>00:00.000</div>
+                <div id='display'>00:00:00.000</div>
+            </div>
+
+            <div id="pitMessageDisplay"></div>
+        </div>
+        
+        <div id="right-column">
+            <div id='lap_list'></div>
+        </div>
+        
+    </div>
+    
+    <div id="buttons-row">
+        <button id="start" class="button">start</button>
+        <button id="lap" class="button">LAP</button> 
+        <button id="gpsButton" class="button no-gps">GPS</button>
+        <button id="getSettingsBtn" class="button no-setting">GET</button>
+        <button id="bleConnectButton" class="button ble-disconnected">BLE</button>
+    </div>
+
+</div>
+
+<script>
+'use strict';
+// ----------------------------------------------------
+// ★★★ BLE定数と変数 ★★★
+// ----------------------------------------------------
+const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+const RECEIVER_DEVICE_NAME = 'NRF_Receiver_B'; 
+let bleCharacteristic;
+
+// --- グローバル変数 ---
+const SW_STATE = { STOP: 0, RUN: 1, PAUSE: 2 };
+let swState = SW_STATE.STOP;
+let startTime = 0;
+let lapRecords = [];
+let lapCount = 0;
+let countUpTimerId = null;
+let lapTimerId = null;
+let lapStartTime = 0;
+let gpsWatchId = null;
+let isGpsRunning = false;
+let lastPosition = null;
+let previousSideOfLine = null;
+let lastLapTime = 0;
+let gpsThresholdValue = 20;
+let lapCoolDown = 15000;
+let isSettingsLoaded = false;
+let lapFixedDisplayTimeoutId = null;
+
+const elem = {
+    display: null,
+    display1: null,
+    lap_list: null,
+    statusDisplay: null,
+    debugInfo: null,
+    startButton: null,
+    lapButton: null,
+    gpsButton: null,
+    getSettingsBtn: null,
+    bleConnectButton: null,
+    pitMessageDisplay: null
+};
+
+// GPSラップ計測用変数 - localStorageから読み込む
+let LAP_LINE_P1 = { lat: 0, lon: 0 };
+let LAP_LINE_P2 = { lat: 0, lon: 0 };
+
+// --- ストップウォッチ関連の関数 ---
+const totalTimePrint = (time) => {
+    let h = Math.floor(time / 3600000);
+    let m = Math.floor((time % 3600000) / 60000);
+    let s = Math.floor((time % 60000) / 1000);
+    let ms = Math.floor(time % 1000);
+    
+    h = ('0' + h).slice(-2);
+    m = ('0' + m).slice(-2);
+    s = ('0' + s).slice(-2);
+    ms = ('00' + ms).slice(-3);
+    
+    if (elem.display) elem.display.textContent = `${h}:${m}:${s}.${ms}`;
+};
+
+const lapTimeToString = (time) => {
+    let m = Math.floor(time / 60000);
+    let s = Math.floor(time % 60000 / 1000);
+    let ms = Math.floor(time % 1000);
+    
+    m = ('0' + m).slice(-2);
+    s = ('0' + s).slice(-2);
+    ms = ('00' + ms).slice(-3);
+    
+    return `${m}:${s}.${ms}`;
+};
+
+const countUp = () => {
+    countUpTimerId = requestAnimationFrame(() => {
+        const now = Date.now();
+        const elapsedTime = now - startTime;
+        totalTimePrint(elapsedTime);
+        countUp();
+    });
+};
+
+const startRealtimeLap = () => {
+    if (swState === SW_STATE.RUN) {
+        lapTimerId = requestAnimationFrame(() => {
+            const now = Date.now();
+            const lapElapsedTime = now - lapStartTime;
+            const lapDisplay = lapTimeToString(lapElapsedTime);
+            if (elem.display1) elem.display1.textContent = lapDisplay;
+            startRealtimeLap();
+        });
+    }
+};
+
+const lapTimePrint = (time) => { 
+    const lapDuration = lapTimeToString(time);
+    const lapDiv = document.createElement('div');
+    lapDiv.textContent = `[${lapCount}] ${lapDuration}`; 
+    lapDiv.style.fontSize = '2.0em'; 
+    lapDiv.style.textAlign = 'right'; 
+    if (elem.lap_list) {
+        elem.lap_list.insertBefore(lapDiv, elem.lap_list.firstChild);
+    }
+    lapRecords.push({ count: lapCount, time: lapDuration }); 
+};
+
+const updateButtonDisplay = () => {
+    if (elem.lapButton) {
+        if (swState === SW_STATE.RUN) {
+            elem.lapButton.textContent = 'LAP';
+        } else if (swState === SW_STATE.PAUSE) {
+            elem.lapButton.textContent = 'RESET';
+        } else { 
+            elem.lapButton.textContent = 'LAP'; 
+        }
+    }
+    if (elem.startButton) {
+        elem.startButton.textContent = (swState === SW_STATE.RUN) ? 'stop' : 'start';
+    }
+};
+
+const clickStartSW = () => {
+    console.log("start/stop button clicked"); 
+    
+    if (!isSettingsLoaded && swState === SW_STATE.STOP) {
+        if (elem.debugInfo) {
+            elem.debugInfo.textContent = "GPS設定が未取得です。手動での計測を開始します。";
+        }
+    }
+    
+    if (swState === SW_STATE.STOP) {
+        swState = SW_STATE.RUN;
+        startTime = Date.now();
+        lapStartTime = Date.now();
+        lapCount = 0;
+        elem.lap_list.innerHTML = '';
+        countUp();
+        startRealtimeLap();
+    } else if (swState === SW_STATE.RUN) {
+        swState = SW_STATE.PAUSE;
+        cancelAnimationFrame(countUpTimerId);
+        cancelAnimationFrame(lapTimerId);
+        if (lapFixedDisplayTimeoutId) {
+            clearTimeout(lapFixedDisplayTimeoutId);
+        }
+    } else if (swState === SW_STATE.PAUSE) {
+        swState = SW_STATE.RUN;
+        const now = Date.now();
+        const pausedTime = now - lapStartTime;
+        startTime += pausedTime;
+        lapStartTime = now;
+        countUp();
+        startRealtimeLap();
+    }
+    updateButtonDisplay();
+};
+
+const resetStopwatch = () => {
+    console.log("reset stopwatch");
+    swState = SW_STATE.STOP;
+    startTime = 0;
+    lapRecords = [];
+    lapCount = 0;
+    cancelAnimationFrame(countUpTimerId);
+    cancelAnimationFrame(lapTimerId);
+    if (lapFixedDisplayTimeoutId) {
+        clearTimeout(lapFixedDisplayTimeoutId);
+    }
+    totalTimePrint(0);
+    if (elem.lap_list) elem.lap_list.innerHTML = '';
+    if (elem.display1) elem.display1.textContent = '00:00.000';
+    
+    stopGps();
+    if (elem.gpsButton) {
+        elem.gpsButton.classList.remove('active-blue');
+        elem.gpsButton.classList.add('no-gps');
+    }
+};
+
+
+const clickLapSW = () => {
+    console.log("lap/reset button clicked");
+    
+    if (swState === SW_STATE.RUN) {
+        // RUN中はLAP機能
+        lapCount++;
+        const now = Date.now();
+        const lapDuration = now - lapStartTime;
+        lapTimePrint(lapDuration); 
+        lapStartTime = now;
+        cancelAnimationFrame(lapTimerId);
+        startRealtimeLap();
+        
+    } else if (swState === SW_STATE.PAUSE) {
+        // PAUSE中はRESET機能
+        resetStopwatch();
+    }
+    updateButtonDisplay();
+};
+
+const clickGpsButton = () => {
+    console.log("GPS button clicked");
+    if (!isGpsRunning) {
+        startGps();
+    } else {
+        stopGps();
+    }
+};
+
+function startGps() {
+    if (!isSettingsLoaded) {
+        elem.debugInfo.innerHTML = "GPS設定が読み込まれていません。<br>GETボタンを押して設定を読み込んでください。";
+        return;
+    }
+
+    elem.statusDisplay.textContent = 'GPS監視中...';
+    gpsWatchId = navigator.geolocation.watchPosition(
+        onGpsPositionUpdate,
+        onGpsError,
+        { "enableHighAccuracy": true, "timeout": 20000, "maximumAge": 0 }
+    );
+    isGpsRunning = true;
+    elem.gpsButton.textContent = 'GPS';
+    elem.gpsButton.classList.remove('no-gps');
+    elem.gpsButton.classList.add('active-blue');
+}
+
+function stopGps() {
+    if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+        isGpsRunning = false;
+        elem.statusDisplay.textContent = 'GPS監視停止';
+        elem.gpsButton.textContent = 'GPS';
+        elem.gpsButton.classList.remove('active-blue');
+        elem.gpsButton.classList.add('no-gps');
+    }
+}
+
+const getSettings = () => {
+    console.log("GET button clicked");
+    const p1Lat = localStorage.getItem('startLineP1Lat');
+    const p1Lon = localStorage.getItem('startLineP1Lon');
+    const p2Lat = localStorage.getItem('startLineP2Lat');
+    const p2Lon = localStorage.getItem('startLineP2Lon');
+    const threshold = localStorage.getItem('gpsThreshold');
+    const coolDown = localStorage.getItem('lapCoolDownTime'); 
+
+    if (p1Lat && p1Lon && p2Lat && p2Lon) {
+        LAP_LINE_P1 = { lat: parseFloat(p1Lat), lon: parseFloat(p1Lon) };
+        LAP_LINE_P2 = { lat: parseFloat(p2Lat), lon: parseFloat(p2Lon) };
+        gpsThresholdValue = threshold ? parseFloat(threshold) : 20;
+        lapCoolDown = coolDown ? parseFloat(coolDown) : 15000; 
+
+        elem.statusDisplay.textContent = `GPS設定: OK (閾値: ${gpsThresholdValue}m / クールダウン: ${lapCoolDown / 1000}秒)`;
+        elem.debugInfo.textContent = "GPS設定が読み込まれました。";
+        isSettingsLoaded = true;
+        elem.getSettingsBtn.classList.remove('no-setting');
+        elem.getSettingsBtn.classList.add('active-blue');
+    } else {
+        elem.statusDisplay.textContent = 'GPS設定: 未設定（設定ツールで保存してください）';
+        elem.debugInfo.textContent = "localStorageにGPS設定が見つかりません。";
+        isSettingsLoaded = false;
+        elem.getSettingsBtn.classList.remove('active-blue');
+        elem.getSettingsBtn.classList.add('no-setting');
+    }
+};
+
+function onGpsPositionUpdate(position) {
+    if (swState !== SW_STATE.RUN || !isGpsRunning) {
+        return;
+    }
+    
+    const currentLat = position.coords.latitude;
+    const currentLon = position.coords.longitude;
+    const currentTime = Date.now();
+    
+    // ヘルパー関数群（省略）
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3;
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+    
+    const calculatePerpendicularFootApprox = (lineLat1, lineLon1, lineLat2, lineLon2, pointLat, pointLon) => {
+        const dx = lineLon2 - lineLon1;
+        const dy = lineLat2 - lineLat1;
+        const lineLenSq = dx * dx + dy * dy;
+        if (lineLenSq < 1e-9) return { latitude: lineLat1, longitude: lineLon1 };
+        const t = ((pointLon - lineLon1) * dx + (pointLat - lineLat1) * dy) / lineLenSq;
+        if (t < 0) return { latitude: lineLat1, longitude: lineLon1 };
+        if (t > 1) return { latitude: lineLat2, longitude: lineLon2 };
+        return { latitude: lineLat1 + t * dy, longitude: lineLon1 + t * dx };
+    };
+    
+    const getSideOfLine = (pointLat, pointLon, lineLat1, lineLon1, lineLat2, lineLon2) => {
+        return (lineLon2 - lineLon1) * (pointLat - lineLat1) - (lineLat2 - lineLat1) * (pointLon - lineLon1);
+    };
+
+    const getIntersectionTime = (p1, p2, l1, l2, l3, l4) => {
+        const A = (l4 - l2) * (p2.lon - p1.lon) - (l3 - l1) * (p2.lat - p1.lat);
+        if (A === 0) return null;
+        const B = (l3 - l1) * (p1.lat - l2) - (l4 - l2) * (p1.lon - l1);
+        const ratio = B / A;
+        if (ratio < 0 || ratio > 1) return null;
+        return p1.time + (p2.time - p1.time) * ratio;
+    };
+
+    if (!lastPosition) {
+        lastPosition = { lat: currentLat, lon: currentLon, time: currentTime, speed: position.coords.speed };
+        previousSideOfLine = getSideOfLine(currentLat, currentLon, LAP_LINE_P1.lat, LAP_LINE_P1.lon, LAP_LINE_P2.lat, LAP_LINE_P2.lon);
+        return;
+    }
+
+    const currentSideOfLine = getSideOfLine(currentLat, currentLon, LAP_LINE_P1.lat, LAP_LINE_P1.lon, LAP_LINE_P2.lat, LAP_LINE_P2.lon);
+    const isCrossingLine = (previousSideOfLine > 0 && currentSideOfLine < 0) || (previousSideOfLine < 0 && currentSideOfLine > 0);
+    const timeSinceLastLap = currentTime - lastLapTime;
+    const isCoolDownOver = (lapCount === 0) || (timeSinceLastLap >= lapCoolDown);
+
+    const P = calculatePerpendicularFootApprox(LAP_LINE_P1.lat, LAP_LINE_P1.lon, LAP_LINE_P2.lat, LAP_LINE_P2.lon, currentLat, currentLon);
+    const distanceToStartLine = calculateDistance(currentLat, currentLon, P.latitude, P.longitude);
+    const isNearStartLine = distanceToStartLine <= gpsThresholdValue;
+
+    if (isCrossingLine && isCoolDownOver && isNearStartLine) {
+        const timeDelta = currentTime - lastPosition.time;
+        const speed = position.coords.speed || 0; 
+        const distanceMoved = speed * timeDelta / 1000; 
+        
+        const deltaLat = currentLat - lastPosition.lat;
+        const deltaLon = currentLon - lastPosition.lon;
+        const currentToLastDistance = calculateDistance(currentLat, currentLon, lastPosition.lat, lastPosition.lon);
+
+        let predictedLat, predictedLon;
+        if (currentToLastDistance > 0) {
+            const ratio = distanceMoved / currentToLastDistance;
+            predictedLat = currentLat + deltaLat * ratio;
+            predictedLon = currentLon + deltaLon * ratio;
+        } else {
+            predictedLat = currentLat;
+            predictedLon = currentLon;
+        }
+
+        const predictedPosition = {
+            lat: predictedLat,
+            lon: predictedLon,
+            time: currentTime + timeDelta
+        };
+
+        const estimatedCrossingTime = getIntersectionTime(lastPosition, predictedPosition, LAP_LINE_P1.lat, LAP_LINE_P1.lon, LAP_LINE_P2.lat, LAP_LINE_P2.lon);
+        
+        let lapTimeBase;
+        if (estimatedCrossingTime && Math.abs(estimatedCrossingTime - currentTime) < 10000) {
+            lapTimeBase = estimatedCrossingTime;
+        } else {
+            lapTimeBase = currentTime;
+        }
+
+        lapCount++;
+        const lapDuration = lapTimeBase - lapStartTime;
+        lapTimePrint(lapDuration); 
+        
+        cancelAnimationFrame(lapTimerId);
+        if (elem.display1) elem.display1.textContent = lapTimeToString(lapDuration);
+
+        if (lapFixedDisplayTimeoutId) {
+             clearTimeout(lapFixedDisplayTimeoutId);
+        }
+        lapFixedDisplayTimeoutId = setTimeout(() => {
+            if (swState === SW_STATE.RUN) {
+                lapStartTime = lapTimeBase;
+                startRealtimeLap();
+            }
+        }, 10000);
+        
+        lastLapTime = lapTimeBase;
+    }
+
+    lastPosition = { lat: currentLat, lon: currentLon, time: currentTime, speed: position.coords.speed };
+    previousSideOfLine = currentSideOfLine;
+
+    const logText = `距離: ${distanceToStartLine.toFixed(2)} m<br>速度: ${(position.coords.speed || 0).toFixed(2)} m/s<br>ライン通過: ${isCrossingLine}<br>周回数: ${lapCount}`;
+    elem.debugInfo.innerHTML = logText;
+}
+
+function onGpsError(error) {
+    elem.debugInfo.textContent = `GPSエラー: ${error.message}`;
+    elem.gpsButton.classList.remove('active-blue');
+    elem.gpsButton.classList.add('no-gps');
+    stopGps();
+}
+
+// ----------------------------------------------------
+// ★★★ BLE通信関数 ★★★
+// ----------------------------------------------------
+
+function handlePitMessage(event) {
+    const value = event.target.value; 
+    const decoder = new TextDecoder('utf-8');
+    const receivedString = decoder.decode(value).trim(); 
+
+    if (elem.pitMessageDisplay) {
+        if (receivedString === '' || receivedString.toLowerCase() === 'なし') {
+            elem.pitMessageDisplay.textContent = '';
+            elem.pitMessageDisplay.style.display = 'none'; 
+            elem.debugInfo.innerHTML += `<br><span style="color: #666666;">[PIT] メッセージクリア</span>`;
+        } else {
+            elem.pitMessageDisplay.textContent = receivedString;
+            elem.pitMessageDisplay.style.display = 'block'; 
+            elem.debugInfo.innerHTML += `<br><span style="color: #ffeb3b;">[PIT] ${receivedString}</span>`;
+        }
+    }
+}
+
+async function connectToPitDevice() {
+    elem.bleConnectButton.textContent = '接続中...'; 
+    try {
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ name: RECEIVER_DEVICE_NAME }], 
+            optionalServices: [SERVICE_UUID] 
+        });
+        
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+
+        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+        await bleCharacteristic.startNotifications();
+        bleCharacteristic.addEventListener('characteristicvaluechanged', handlePitMessage);
+
+        elem.bleConnectButton.textContent = 'BLE';
+        elem.bleConnectButton.classList.remove('ble-disconnected');
+        elem.bleConnectButton.classList.add('ble-connected');
+        
+        elem.pitMessageDisplay.textContent = '';
+        elem.pitMessageDisplay.style.display = 'none'; 
+
+        device.addEventListener('gattserverdisconnected', onDeviceDisconnected);
+
+    } catch (error) {
+        elem.bleConnectButton.textContent = 'BLE 未接続';
+        elem.bleConnectButton.classList.remove('ble-connected');
+        elem.bleConnectButton.classList.add('ble-disconnected');
+        
+        elem.pitMessageDisplay.textContent = '接続エラー。再試行してください。';
+        elem.pitMessageDisplay.style.display = 'block'; 
+    }
+}
+
+function onDeviceDisconnected(event) {
+    elem.bleConnectButton.textContent = 'BLE 未接続';
+    elem.bleConnectButton.classList.remove('ble-connected');
+    elem.bleConnectButton.classList.add('ble-disconnected');
+    
+    elem.pitMessageDisplay.textContent = '接続が切れました。再接続してください。';
+    elem.pitMessageDisplay.style.display = 'block';
+}
+
+// ----------------------------------------------------
+// ★★★ 初期化処理（loadイベント） ★★★
+// ----------------------------------------------------
+
+window.addEventListener('load', () => {
+    // Service Workerの登録（PWAとして動作させる場合）
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+    }
+
+    elem.display = document.getElementById('display');
+    elem.display1 = document.getElementById('display1');
+    elem.lap_list = document.getElementById('lap_list');
+    elem.statusDisplay = document.getElementById('status-display');
+    elem.debugInfo = document.getElementById('debugInfo');
+    elem.startButton = document.getElementById('start');
+    elem.lapButton = document.getElementById('lap'); 
+    elem.gpsButton = document.getElementById('gpsButton');
+    elem.getSettingsBtn = document.getElementById('getSettingsBtn');
+    
+    elem.bleConnectButton = document.getElementById('bleConnectButton');
+    elem.pitMessageDisplay = document.getElementById('pitMessageDisplay');
+
+    if (elem.startButton) elem.startButton.addEventListener('click', clickStartSW);
+    if (elem.lapButton) elem.lapButton.addEventListener('click', clickLapSW); 
+    if (elem.gpsButton) elem.gpsButton.addEventListener('click', clickGpsButton);
+    if (elem.getSettingsBtn) elem.getSettingsBtn.addEventListener('click', getSettings);
+    
+    if (elem.bleConnectButton) elem.bleConnectButton.addEventListener('click', connectToPitDevice);
+    
+    updateButtonDisplay();
+    totalTimePrint(0);
+    if (elem.display1) elem.display1.textContent = '00:00.000';
+    getSettings();
+});
+</script>
+</body>
+</html>
