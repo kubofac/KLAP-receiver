@@ -36,7 +36,6 @@
             margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
-            /* 修正: min-heightとflex-growで制御 */
             min-height: calc(100vh - 20px); 
             flex-grow: 1; 
             position: relative;
@@ -49,7 +48,7 @@
             width: 100%;
             gap: 15px;
             align-items: flex-start;
-            flex-grow: 1; /* 修正: 残りの縦スペースをすべて占有 */
+            flex-grow: 1; 
             min-height: 0;
             
             position: relative;
@@ -75,7 +74,7 @@
             max-width: 35%;
             flex-grow: 1;
             align-items: center;
-            height: 100%; /* main-contentの残りの高さを利用 */
+            height: 100%; 
         }
 
         #time-display-column {
@@ -124,7 +123,7 @@
         /* ラップリストの調整 */
         #lap_list {
             width: 100%;
-            height: 100%; /* 親要素(right-column)の残りの高さを利用 */
+            height: 100%; 
             max-height: none;
             overflow-y: auto;
             border: none;
@@ -149,7 +148,7 @@
             gap: 15px;
             padding-top: 10px;
             margin-bottom: 0;
-            flex-shrink: 0; /* 修正: ボタン列は縮まない */
+            flex-shrink: 0; 
         }
         
         .button {
@@ -196,13 +195,13 @@
         }
         .status-text { text-align: left; margin: 0; }
         
-        /* モバイルビューでのフォントサイズ再調整 */
+        /* --- モバイルビュー (@media) --- */
         @media (max-width: 768px) {
             #main-content {
                 flex-direction: column;
                 align-items: center;
                 gap: 10px;
-                flex-grow: 1; /* モバイルでも縦のスペースを占有 */
+                flex-grow: 1; 
                 min-height: 0;
             }
             #left-column, #right-column {
@@ -214,21 +213,21 @@
             }
             #left-column {
                 gap: 0px;
-                flex-shrink: 0; /* 左カラムは縮まない */
+                flex-shrink: 0; 
             }
             #right-column {
-                flex-grow: 1; /* 修正: 右カラムが残りのスペースを柔軟に占有 */
+                flex-grow: 1; 
                 height: auto;
                 min-height: 180px; 
             }
             #display1 { font-size: 80px; }
             #display { font-size: 45px; }
             #lap_list {
-                height: 100%; /* 修正: flex-growに任せる */
+                height: 100%; 
                 min-height: 180px;
                 font-size: 1em;
             }
-            /* モバイル時のラップ履歴の文字を3.0emに拡大 */
+            
             #lap_list div {
                 font-size: 3.0em;
                 text-align: right;
@@ -239,6 +238,29 @@
             }
             .button {
                 font-size: 12px;
+            }
+            
+            /* --- 横画面時 (orientation: landscape) の追加設定 --- */
+            @media (orientation: landscape) {
+                #display1 { font-size: 70px; } 
+                #display { font-size: 35px; } 
+
+                #right-column {
+                    min-height: 150px; 
+                }
+
+                #lap_list div {
+                    font-size: 2.2em;
+                }
+                
+                #pitMessageDisplay {
+                    font-size: 1.4em;
+                }
+                
+                .button {
+                    font-size: 11px;
+                    padding: 8px 10px;
+                }
             }
         }
     </style>
