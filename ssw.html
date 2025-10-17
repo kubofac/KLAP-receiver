@@ -7,6 +7,7 @@
     <link rel="manifest" href="/manifest.json">
     <style>
         html, body {
+            /* 修正: HTML/Bodyの高さは100%を厳守 */
             height: 100%;
             margin: 0;
         }
@@ -17,11 +18,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            min-height: 100vh;
+            /* 修正: 画面の高さ100%を確保 */
+            height: 100vh;
             background-color: #000000;
             color: #ffffff;
             padding: 10px;
             position: relative;
+            box-sizing: border-box; /* paddingを含めて高さを100vhに収める */
         }
 
         #container {
@@ -36,12 +39,13 @@
             margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
-            min-height: calc(100vh - 20px); 
+            /* 修正: 画面全体から上下のpaddingとbodyのpaddingを引いた高さを設定 */
+            height: 100%;
             flex-grow: 1; 
             position: relative;
         }
         
-        /* 2カラム構造 */
+        /* 2カラム構造 (メインコンテンツ) */
         #main-content {
             display: flex;
             flex-direction: row;
@@ -49,7 +53,9 @@
             gap: 15px;
             align-items: flex-start;
             flex-grow: 1; 
-            min-height: 0;
+            /* 修正: ボタン行が占める高さを差し引いた残りの高さを確保 */
+            height: calc(100% - 70px); /* 暫定値: ボタン行とpaddingを考慮して高さを確保 */
+            min-height: 0; /* flexアイテムの溢れ防止 */
             
             position: relative;
             z-index: 10;
@@ -64,6 +70,9 @@
             flex-shrink: 0;
             align-items: center;
             gap: 0px;
+            /* 修正: 左カラムはコンテンツに応じて縮小しない */
+            height: auto; 
+            min-height: 0;
         }
 
         /* 右カラム（ラップ履歴） - 幅35% */
@@ -74,7 +83,9 @@
             max-width: 35%;
             flex-grow: 1;
             align-items: center;
-            height: 100%; 
+            /* 修正: main-contentの高さを完全に引き継ぐ */
+            height: 100%;
+            min-height: 0; /* overflow対策 */
         }
 
         #time-display-column {
@@ -120,16 +131,27 @@
             flex-shrink: 0; 
         }
 
-        /* ラップリストの調整 */
+        /* ラップリストの調整 (スクロール領域) */
         #lap_list {
             width: 100%;
+            /* 修正: 親(right-column)の高さ100%を占有し、スクロールを有効にする */
             height: 100%; 
             max-height: none;
-            overflow-y: auto;
-            border: none;
+            overflow-y: auto; 
+            border: 1px solid #333; /* 視覚的に領域を確認するための一時的な境界線 */
             border-radius: 5px;
             background-color: #000000;
             padding: 10px;
+            box-sizing: border-box; /* paddingを含めて高さ100%に収める */
+        }
+        
+        /* スクロールバーのスタイル（任意） */
+        #lap_list::-webkit-scrollbar {
+            width: 6px;
+        }
+        #lap_list::-webkit-scrollbar-thumb {
+            background-color: #555;
+            border-radius: 3px;
         }
 
         /* ラップ履歴の文字を2.0emに拡大 */
@@ -203,6 +225,8 @@
                 gap: 10px;
                 flex-grow: 1; 
                 min-height: 0;
+                /* 修正: 縦画面では高さを再び計算で調整 */
+                height: calc(100% - 70px); /* ボタン行が下に固定されることを前提とした計算 */
             }
             #left-column, #right-column {
                 flex-basis: auto;
@@ -210,21 +234,23 @@
                 width: 100%;
                 height: auto;
                 flex-shrink: 1;
+                min-height: 0;
             }
             #left-column {
                 gap: 0px;
-                flex-shrink: 0; 
+                flex-shrink: 0; /* 左カラム（タイム表示）は縮まない */
+                height: auto; /* コンテンツサイズに合わせる */
             }
             #right-column {
-                flex-grow: 1; 
-                height: auto;
-                min-height: 180px; 
+                flex-grow: 1; /* 右カラム（ラップ履歴）が残りのスペースを柔軟に占有 */
+                /* 修正: 残りの高さをcalcで正確に計算 */
+                height: calc(100% - 145px); /* main-contentの高さ - left-columnの標準的な高さ(仮に145px) */
+                min-height: 150px; /* 最小高さを設定 */
             }
             #display1 { font-size: 80px; }
             #display { font-size: 45px; }
             #lap_list {
-                height: 100%; 
-                min-height: 180px;
+                height: 100%; /* right-columnの残りを占有 */
                 font-size: 1em;
             }
             
@@ -242,12 +268,23 @@
             
             /* --- 横画面時 (orientation: landscape) の追加設定 --- */
             @media (orientation: landscape) {
+                /* 2カラムに戻るが、高さを調整 */
+                #main-content {
+                    flex-direction: row;
+                    height: calc(100% - 50px); /* 横画面ではボタンが小さくなるため高さを微調整 */
+                }
+                #left-column {
+                    flex-basis: 55%;
+                    max-width: 55%;
+                }
+                #right-column {
+                    flex-basis: 45%;
+                    max-width: 45%;
+                    height: 100%; /* main-contentの残りを完全に占有 */
+                }
+
                 #display1 { font-size: 70px; } 
                 #display { font-size: 35px; } 
-
-                #right-column {
-                    min-height: 150px; 
-                }
 
                 #lap_list div {
                     font-size: 2.2em;
