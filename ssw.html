@@ -7,7 +7,6 @@
     <link rel="manifest" href="/manifest.json">
     <style>
         html, body {
-            /* 修正: HTML/Bodyの高さは100%を厳守 */
             height: 100%;
             margin: 0;
         }
@@ -18,13 +17,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            /* 修正: 画面の高さ100%を確保 */
             height: 100vh;
             background-color: #000000;
             color: #ffffff;
             padding: 10px;
             position: relative;
-            box-sizing: border-box; /* paddingを含めて高さを100vhに収める */
+            box-sizing: border-box;
         }
 
         #container {
@@ -39,7 +37,6 @@
             margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
-            /* 修正: 画面全体から上下のpaddingとbodyのpaddingを引いた高さを設定 */
             height: 100%;
             flex-grow: 1; 
             position: relative;
@@ -53,9 +50,8 @@
             gap: 15px;
             align-items: flex-start;
             flex-grow: 1; 
-            /* 修正: ボタン行が占める高さを差し引いた残りの高さを確保 */
-            height: calc(100% - 70px); /* 暫定値: ボタン行とpaddingを考慮して高さを確保 */
-            min-height: 0; /* flexアイテムの溢れ防止 */
+            height: calc(100% - 70px); 
+            min-height: 0;
             
             position: relative;
             z-index: 10;
@@ -70,7 +66,6 @@
             flex-shrink: 0;
             align-items: center;
             gap: 0px;
-            /* 修正: 左カラムはコンテンツに応じて縮小しない */
             height: auto; 
             min-height: 0;
         }
@@ -83,9 +78,8 @@
             max-width: 35%;
             flex-grow: 1;
             align-items: center;
-            /* 修正: main-contentの高さを完全に引き継ぐ */
             height: 100%;
-            min-height: 0; /* overflow対策 */
+            min-height: 0;
         }
 
         #time-display-column {
@@ -101,6 +95,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
+            position: relative; /* z-indexを効かせるために必要 */
+            z-index: 1;
         }
 
         /* 経過時間 (display) */
@@ -112,6 +108,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
+            position: relative;
+            z-index: 1;
         }
 
         /* ピットメッセージ */
@@ -129,20 +127,22 @@
             text-align: left;
             display: none;
             flex-shrink: 0; 
+            position: relative;
+            z-index: 1;
         }
 
         /* ラップリストの調整 (スクロール領域) */
         #lap_list {
             width: 100%;
-            /* 修正: 親(right-column)の高さ100%を占有し、スクロールを有効にする */
             height: 100%; 
             max-height: none;
             overflow-y: auto; 
-            border: 1px solid #333; /* 視覚的に領域を確認するための一時的な境界線 */
+            /* 修正: 枠線を削除 */
+            border: none; 
             border-radius: 5px;
             background-color: #000000;
             padding: 10px;
-            box-sizing: border-box; /* paddingを含めて高さ100%に収める */
+            box-sizing: border-box;
         }
         
         /* スクロールバーのスタイル（任意） */
@@ -202,10 +202,11 @@
 
         /* debug-overlay */
         #debug-overlay {
+            /* 修正: left-columnの領域全体をカバーするように調整 */
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+            top: 20px; /* #container の top padding と同じ */
+            left: 20px; /* #container の left padding と同じ */
+            width: calc(65% - 15px); /* left-columnの幅 65% と main-contentの gap 15px を考慮 */
             background-color: rgba(0, 0, 0, 0.7);
             color: #999999;
             padding: 5px 10px;
@@ -213,7 +214,8 @@
             font-size: 14px;
             line-height: 1.5;
             box-sizing: border-box;
-            z-index: 5;
+            /* 修正: リアルラップ/経過時間よりも上に表示されるようにz-indexを高く設定 */
+            z-index: 20; 
         }
         .status-text { text-align: left; margin: 0; }
         
@@ -225,8 +227,7 @@
                 gap: 10px;
                 flex-grow: 1; 
                 min-height: 0;
-                /* 修正: 縦画面では高さを再び計算で調整 */
-                height: calc(100% - 70px); /* ボタン行が下に固定されることを前提とした計算 */
+                height: calc(100% - 70px);
             }
             #left-column, #right-column {
                 flex-basis: auto;
@@ -238,19 +239,18 @@
             }
             #left-column {
                 gap: 0px;
-                flex-shrink: 0; /* 左カラム（タイム表示）は縮まない */
-                height: auto; /* コンテンツサイズに合わせる */
+                flex-shrink: 0;
+                height: auto;
             }
             #right-column {
-                flex-grow: 1; /* 右カラム（ラップ履歴）が残りのスペースを柔軟に占有 */
-                /* 修正: 残りの高さをcalcで正確に計算 */
-                height: calc(100% - 145px); /* main-contentの高さ - left-columnの標準的な高さ(仮に145px) */
-                min-height: 150px; /* 最小高さを設定 */
+                flex-grow: 1;
+                height: calc(100% - 145px);
+                min-height: 150px;
             }
             #display1 { font-size: 80px; }
             #display { font-size: 45px; }
             #lap_list {
-                height: 100%; /* right-columnの残りを占有 */
+                height: 100%;
                 font-size: 1em;
             }
             
@@ -265,13 +265,20 @@
             .button {
                 font-size: 12px;
             }
+
+            /* 修正: モバイル縦画面でのdebug-overlayの位置調整 */
+            #debug-overlay {
+                top: 20px;
+                left: 20px;
+                width: calc(100% - 40px);
+                border-radius: 10px 10px 0 0;
+            }
             
             /* --- 横画面時 (orientation: landscape) の追加設定 --- */
             @media (orientation: landscape) {
-                /* 2カラムに戻るが、高さを調整 */
                 #main-content {
                     flex-direction: row;
-                    height: calc(100% - 50px); /* 横画面ではボタンが小さくなるため高さを微調整 */
+                    height: calc(100% - 50px);
                 }
                 #left-column {
                     flex-basis: 55%;
@@ -280,7 +287,7 @@
                 #right-column {
                     flex-basis: 45%;
                     max-width: 45%;
-                    height: 100%; /* main-contentの残りを完全に占有 */
+                    height: 100%;
                 }
 
                 #display1 { font-size: 70px; } 
@@ -297,6 +304,11 @@
                 .button {
                     font-size: 11px;
                     padding: 8px 10px;
+                }
+                
+                /* 修正: モバイル横画面でのdebug-overlayの位置調整 */
+                #debug-overlay {
+                    width: calc(55% - 15px); /* left-columnの幅 55% と gap 15px を考慮 */
                 }
             }
         }
