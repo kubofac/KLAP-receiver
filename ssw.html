@@ -95,8 +95,9 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
-            position: relative; /* z-indexを効かせるために必要 */
-            z-index: 1;
+            position: relative; 
+            /* 修正: z-indexを高くし、debug-overlayの上に配置 */
+            z-index: 30; 
         }
 
         /* 経過時間 (display) */
@@ -109,7 +110,8 @@
             overflow: hidden;
             text-overflow: clip;
             position: relative;
-            z-index: 1;
+            /* 修正: z-indexを高くし、debug-overlayの上に配置 */
+            z-index: 30;
         }
 
         /* ピットメッセージ */
@@ -137,7 +139,6 @@
             height: 100%; 
             max-height: none;
             overflow-y: auto; 
-            /* 修正: 枠線を削除 */
             border: none; 
             border-radius: 5px;
             background-color: #000000;
@@ -202,11 +203,10 @@
 
         /* debug-overlay */
         #debug-overlay {
-            /* 修正: left-columnの領域全体をカバーするように調整 */
             position: absolute;
-            top: 20px; /* #container の top padding と同じ */
-            left: 20px; /* #container の left padding と同じ */
-            width: calc(65% - 15px); /* left-columnの幅 65% と main-contentの gap 15px を考慮 */
+            top: 20px;
+            left: 20px;
+            width: calc(65% - 15px);
             background-color: rgba(0, 0, 0, 0.7);
             color: #999999;
             padding: 5px 10px;
@@ -214,7 +214,7 @@
             font-size: 14px;
             line-height: 1.5;
             box-sizing: border-box;
-            /* 修正: リアルラップ/経過時間よりも上に表示されるようにz-indexを高く設定 */
+            /* 修正: リアルラップより下に表示されるようz-indexを調整 */
             z-index: 20; 
         }
         .status-text { text-align: left; margin: 0; }
@@ -266,7 +266,6 @@
                 font-size: 12px;
             }
 
-            /* 修正: モバイル縦画面でのdebug-overlayの位置調整 */
             #debug-overlay {
                 top: 20px;
                 left: 20px;
@@ -306,9 +305,8 @@
                     padding: 8px 10px;
                 }
                 
-                /* 修正: モバイル横画面でのdebug-overlayの位置調整 */
                 #debug-overlay {
-                    width: calc(55% - 15px); /* left-columnの幅 55% と gap 15px を考慮 */
+                    width: calc(55% - 15px);
                 }
             }
         }
